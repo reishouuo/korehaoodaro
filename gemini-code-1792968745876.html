@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学習ナビ Pro - 超・快適テスト対策</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap');
+    body { font-family: 'Noto Sans JP', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 10px; }
+    .card-flip { transition: transform 0.4s; transform-style: preserve-3d; }
+    .is-flipped { transform: rotateY(180deg); }
+    .card-face { backface-visibility: hidden; }
+    .card-back { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="showScreen('home')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center font-bold text-xl shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-rocket text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-300">学習ナビ Pro</h1>
+          <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Self Study Engine</span>
+        </div>
+      </div>
+      <div class="flex gap-4 items-center">
+        <div class="text-right hidden sm:block mr-2">
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Today's Study</div>
+          <div class="text-sm font-bold text-emerald-400" id="header-today-time">0分</div>
+        </div>
+        <button onclick="showScreen('add')" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition px-3 py-1.5 rounded-lg border border-indigo-400/50 shadow-lg font-bold">
+          <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">教科追加</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-4 py-8 flex-1 w-full relative">
+
+    <!-- 1. HOME SCREEN -->
+    <div id="screen-home" class="fade-in space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-1 space-y-4">
+          <div class="bg-gradient-to-br from-slate-800 to-slate-800/60 border border-slate-700/60 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2"><i class="fa-solid fa-fire text-orange-400"></i> 学習モチベーション</h2>
+            <div class="space-y-6 relative z-10">
+              <div>
+                <div class="text-xs text-slate-400 mb-1">今日の勉強時間</div>
+                <div class="flex items-baseline gap-1"><span id="stat-today-time" class="text-4xl font-extrabold text-white">0</span><span class="text-sm text-slate-400 font-bold">分</span></div>
+              </div>
+              <div class="pt-4 border-t border-slate-700/50 flex justify-between items-center">
+                <div>
+                  <div class="text-[10px] text-slate-400 uppercase">解いた問題数</div>
+                  <div id="stat-total-q" class="text-lg font-bold text-slate-200">0問</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] text-slate-400 uppercase">平均正答率</div>
+                  <div id="stat-avg-acc" class="text-lg font-bold text-emerald-400">0%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="lg:col-span-2 bg-slate-800/40 border border-slate-700/50 rounded-3xl p-6 shadow-lg">
+          <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-4"><i class="fa-solid fa-chart-column text-purple-400"></i> 直近7日間の学習時間</h2>
+          <div class="h-48 w-full"><canvas id="studyChart"></canvas></div>
+        </section>
+      </div>
+
+      <section class="space-y-4 pt-4">
+        <h2 class="text-xl font-bold flex items-center gap-2 mb-4"><i class="fa-solid fa-book-open-reader text-indigo-400"></i> 学習する教科を選択</h2>
+        <div id="subject-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+    </div>
+
+    <!-- 1.5. ADD SUBJECT SCREEN -->
+    <div id="screen-add" class="hidden fade-in max-w-xl mx-auto mt-6">
+      <button onclick="showScreen('home')" class="text-sm text-slate-400 hover:text-slate-200 transition flex items-center gap-2 mb-4">
+        <i class="fa-solid fa-arrow-left"></i> ホームに戻る
+      </button>
+      <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-8 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2"><i class="fa-solid fa-folder-plus text-emerald-400"></i> 新しい教科を追加</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">教科名 <span class="text-rose-400">*</span></label>
+            <input type="text" id="add-name" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white" placeholder="例: 物理（力学テスト）">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">説明 (任意)</label>
+            <input type="text" id="add-desc" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white" placeholder="例: 中間テスト範囲の復習">
+          </div>
+          
+          <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-700 space-y-4 mt-2">
+            <div>
+              <label class="block text-xs font-bold text-emerald-400 mb-1"><i class="fa-solid fa-link"></i> URL・パスから読み込む</label>
+              <input type="text" id="add-url" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white text-sm" placeholder="例: data/physics.json">
+            </div>
+            
+            <div class="relative flex items-center py-2">
+              <div class="flex-grow border-t border-slate-700"></div>
+              <span class="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase">または</span>
+              <div class="flex-grow border-t border-slate-700"></div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-emerald-400 mb-2"><i class="fa-solid fa-file-upload"></i> ファイルから直接読み込む</label>
+              <input type="file" id="add-file" accept=".json" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-emerald-500/20 file:text-emerald-400 hover:file:bg-emerald-500/30 cursor-pointer">
+            </div>
+          </div>
+
+          <button onclick="addNewSubject()" id="btn-add-subject" class="w-full mt-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg">
+            JSONを検証して追加
+          </button>
+          <div id="add-error" class="text-rose-400 text-sm mt-2 hidden font-bold text-center bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. QUIZ SETUP SCREEN -->
+    <div id="screen-quiz" class="hidden fade-in space-y-6 max-w-2xl mx-auto mt-10">
+      <button onclick="showScreen('home')" class="text-sm text-slate-400 hover:text-slate-200 transition flex items-center gap-2 mb-4"><i class="fa-solid fa-arrow-left"></i> ホームに戻る</button>
+      <div class="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700/60 rounded-3xl p-8 shadow-2xl relative overflow-hidden text-center">
+        <div id="setup-icon" class="w-20 h-20 mx-auto rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-4xl mb-4 relative z-10"></div>
+        <h2 id="setup-title" class="text-3xl font-extrabold text-white relative z-10 mb-2"></h2>
+        <p class="text-sm text-slate-400 relative z-10 mb-8"><span id="setup-count" class="font-bold text-slate-200"></span>問のデータがロードされました。</p>
+
+        <div class="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-slate-700 relative z-10">
+          <h3 class="text-sm font-bold text-slate-300 mb-3">学習モードを選択</h3>
+          <div class="flex gap-4 justify-center">
+            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <input type="radio" name="studyMode" value="input" checked class="accent-indigo-500 w-5 h-5">
+              <span class="font-bold">タイピング形式</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-600 hover:bg-slate-700 transition">
+              <input type="radio" name="studyMode" value="flashcard" class="accent-purple-500 w-5 h-5">
+              <span class="font-bold">単語帳形式</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+          <button onclick="startQuizEngine(10)" class="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-indigo-500 transition-all shadow-lg">
+            <div class="text-xl font-bold text-white">10問テスト</div>
+            <div class="text-xs text-slate-400 mt-1">ランダムにサクッと復習</div>
+          </button>
+          <button onclick="startQuizEngine(0)" class="p-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/50 transition-all shadow-lg">
+            <div class="text-xl font-bold text-white">全問チャレンジ</div>
+            <div class="text-xs text-indigo-200 mt-1">収録されている全ての問題に挑戦</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ACTIVE QUIZ ENGINE -->
+    <div id="screen-engine" class="hidden fade-in max-w-2xl mx-auto flex flex-col min-h-[70vh]">
+      <div class="flex items-center justify-between mb-6 pt-4">
+        <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-300">
+          Q<span id="engine-q-num">1</span>
+        </div>
+        <div class="text-sm font-bold text-slate-200"><span id="engine-progress-text">1 / 10</span></div>
+      </div>
+      <div class="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden mb-8">
+        <div id="engine-progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300 ease-out" style="width: 10%"></div>
+      </div>
+      
+      <div class="flex-1 flex flex-col items-center w-full">
+        <!-- Flashcard Area -->
+        <div id="flashcard-area" class="w-full relative h-64 mb-8 hidden perspective-1000 cursor-pointer" onclick="flipCard()">
+          <div id="card-inner" class="w-full h-full absolute card-flip">
+            <div class="card-face absolute w-full h-full bg-slate-800 border-2 border-slate-600 rounded-3xl p-8 flex flex-col items-center justify-center shadow-lg">
+              <h3 id="fc-q-text" class="text-xl sm:text-2xl font-bold text-center text-white leading-relaxed"></h3>
+              <p class="text-slate-400 mt-4 text-sm animate-pulse">タップして答えを見る</p>
+            </div>
+            <div class="card-face card-back absolute w-full h-full bg-indigo-900/80 border-2 border-indigo-500 rounded-3xl p-8 flex flex-col items-center justify-center shadow-lg overflow-y-auto">
+              <h3 id="fc-a-text" class="text-2xl font-extrabold text-indigo-200 text-center"></h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div id="input-area" class="w-full mb-8 hidden flex flex-col items-center">
+          <h3 id="in-q-text" class="text-xl sm:text-2xl font-bold leading-relaxed mb-8 text-white text-center">問題文</h3>
+          <input type="text" id="user-input" class="w-full sm:w-3/4 bg-slate-800 border-2 border-slate-600 focus:border-indigo-500 rounded-xl p-4 text-center text-xl font-bold outline-none transition text-white placeholder-slate-500" placeholder="答えを入力..." onkeypress="if(event.key==='Enter') checkInput()">
+          <button id="btn-check" onclick="checkInput()" class="mt-4 w-full sm:w-3/4 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg">判定する</button>
+        </div>
+
+        <!-- Feedback & Controls -->
+        <div id="feedback-box" class="hidden w-full mt-auto p-5 rounded-2xl border space-y-3 shadow-lg text-center">
+          <div class="font-bold text-2xl" id="feedback-title"></div>
+          <p id="feedback-ans" class="text-lg font-bold text-slate-200"></p>
+        </div>
+
+        <!-- Flashcard Controls -->
+        <div id="fc-controls" class="hidden w-full grid grid-cols-2 gap-4 mt-6">
+          <button onclick="handleFlashcardResult(false)" class="py-4 bg-rose-900/50 hover:bg-rose-800 text-rose-200 border border-rose-700 font-bold rounded-xl transition shadow-lg">❌ わからなかった</button>
+          <button onclick="handleFlashcardResult(true)" class="py-4 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 border border-emerald-700 font-bold rounded-xl transition shadow-lg">✅ 覚えている</button>
+        </div>
+        
+        <button id="btn-next" onclick="nextQuestion()" class="hidden mt-6 w-full py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition shadow-lg flex justify-center items-center gap-2">
+          次の問題へ <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. RESULT SCREEN -->
+    <div id="screen-result" class="hidden fade-in max-w-2xl mx-auto mt-6">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden backdrop-blur">
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 text-white text-4xl mb-6">
+          <i id="result-icon" class="fa-solid fa-crown"></i>
+        </div>
+        <h2 class="text-3xl font-extrabold text-white mb-6">テスト完了！</h2>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-700/50">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">正答率</div>
+            <div id="result-acc" class="text-4xl font-extrabold text-white">0%</div>
+            <div id="result-score-detail" class="text-xs text-slate-400 mt-1">0 / 0 問正解</div>
+          </div>
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-700/50">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">かかった時間</div>
+            <div id="result-time" class="text-4xl font-extrabold text-indigo-300">0:00</div>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="showScreen('home')" class="flex-1 py-4 bg-slate-700 hover:bg-slate-600 font-bold rounded-xl transition">ホームへ戻る</button>
+          <button onclick="retrySubject()" class="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition">もう一度挑戦</button>
+        </div>
+      </div>
+      <div id="review-section" class="mt-8 space-y-4 hidden">
+        <h3 class="text-lg font-bold flex items-center gap-2 text-rose-300 mb-6"><i class="fa-solid fa-notes-medical"></i> 間違えた問題</h3>
+        <div id="review-list" class="space-y-4"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ==========================================
+    // アプリの状態管理・初期化
+    // ==========================================
+    
+    // 教科リストをLocalStorageから取得。なければ空配列。
+    let appSubjects = JSON.parse(localStorage.getItem('studyNav_subjects')) || [];
+
+    let userStats = JSON.parse(localStorage.getItem('studyNav_stats')) || {
+      totalTimeSec: 0, todayTimeSec: 0, lastDate: new Date().toDateString(),
+      totalQuestions: 0, totalCorrect: 0, dailyLog: {}
+    };
+
+    const todayStr = new Date().toDateString();
+    if (userStats.lastDate !== todayStr) {
+      userStats.todayTimeSec = 0; userStats.lastDate = todayStr; saveStats();
+    }
+    if (!userStats.dailyLog[todayStr]) userStats.dailyLog[todayStr] = { timeSec: 0, qCount: 0 };
+
+    let currentSubject = null, currentQuizSet = [], activeQuestions = [], currentQuestionIndex = 0, score = 0, wrongAnswersLog = [], sessionStartTime = 0, chartInstance = null, currentMode = 'input', isFlipped = false;
+
+    window.onload = initApp;
+
+    function initApp() {
+      renderSubjects(); 
+      updateDashboardUI(); 
+      renderChart();
+    }
+
+    function saveStats() { localStorage.setItem('studyNav_stats', JSON.stringify(userStats)); }
+    function saveSubjects() { localStorage.setItem('studyNav_subjects', JSON.stringify(appSubjects)); }
+
+    function showScreen(screenName) {
+      ['home', 'quiz', 'engine', 'result', 'add'].forEach(s => document.getElementById(`screen-${s}`).classList.add('hidden'));
+      document.getElementById(`screen-${screenName}`).classList.remove('hidden');
+      window.scrollTo(0, 0);
+      if (screenName === 'home') { updateDashboardUI(); if(chartInstance) chartInstance.destroy(); renderChart(); }
+    }
+
+    function updateDashboardUI() {
+      const todayMin = Math.floor(userStats.todayTimeSec / 60);
+      document.getElementById('stat-today-time').innerText = todayMin;
+      document.getElementById('header-today-time').innerText = `${todayMin}分`;
+      document.getElementById('stat-total-q').innerText = `${userStats.totalQuestions}問`;
+      document.getElementById('stat-avg-acc').innerText = `${userStats.totalQuestions > 0 ? Math.round((userStats.totalCorrect / userStats.totalQuestions) * 100) : 0}%`;
+    }
+
+    // 教科リストの描画
+    function renderSubjects() {
+      const container = document.getElementById('subject-list');
+      container.innerHTML = '';
+      
+      appSubjects.forEach(sub => {
+        const color = sub.color || 'indigo';
+        const card = document.createElement('div');
+        card.className = `group bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-${color}-500/50 rounded-3xl p-6 cursor-pointer transition shadow-lg relative overflow-hidden`;
+        
+        // 削除ボタン
+        const delBtn = `<div class="absolute top-4 right-4 text-slate-500 hover:text-rose-400 transition text-lg z-10" onclick="deleteSubject(event, '${sub.id}')" title="削除"><i class="fa-solid fa-trash-can"></i></div>`;
+        
+        card.innerHTML = `
+          ${delBtn}
+          <div onclick="selectSubject('${sub.id}')" class="w-full h-full">
+            <div class="w-14 h-14 rounded-2xl bg-${color}-500/10 text-${color}-400 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
+              <i class="fa-solid ${sub.icon}"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white group-hover:text-${color}-300">${sub.name}</h3>
+            <p class="text-xs text-slate-400 mt-2">${sub.desc}</p>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      // 新規追加ボタンカード
+      const addCard = document.createElement('div');
+      addCard.className = `group bg-slate-800/30 hover:bg-slate-700/50 border-2 border-dashed border-slate-600 hover:border-indigo-500/50 rounded-3xl p-6 cursor-pointer transition flex flex-col items-center justify-center text-center min-h-[160px]`;
+      addCard.onclick = () => showScreen('add');
+      addCard.innerHTML = `
+        <div class="w-12 h-12 rounded-full bg-slate-700 group-hover:bg-indigo-500/20 text-slate-400 group-hover:text-indigo-400 flex items-center justify-center text-xl mb-3 transition"><i class="fa-solid fa-plus"></i></div>
+        <h3 class="text-sm font-bold text-slate-300 group-hover:text-indigo-300">新しい教科を追加</h3>
+      `;
+      container.appendChild(addCard);
+    }
+
+    function deleteSubject(e, id) {
+      e.stopPropagation();
+      if(confirm("この教科を削除しますか？")) {
+        appSubjects = appSubjects.filter(s => s.id !== id);
+        saveSubjects();
+        renderSubjects();
+      }
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('studyChart').getContext('2d'), labels = [], dataPoints = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+        dataPoints.push(userStats.dailyLog[d.toDateString()] ? Math.round(userStats.dailyLog[d.toDateString()].timeSec / 60) : 0);
+      }
+      chartInstance = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ data: dataPoints, backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+    }
+
+    // ==========================================
+    // 新規教科の追加＆JSON検証ロジック
+    // ==========================================
+    async function addNewSubject() {
+      const name = document.getElementById('add-name').value.trim();
+      const desc = document.getElementById('add-desc').value.trim();
+      const url = document.getElementById('add-url').value.trim();
+      const fileInput = document.getElementById('add-file');
+      const errorEl = document.getElementById('add-error');
+      const btn = document.getElementById('btn-add-subject');
+      
+      errorEl.classList.add('hidden');
+      
+      if (!name) {
+        errorEl.innerText = '教科名を入力してください';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      
+      let jsonData = null;
+      let dataSource = null;
+      
+      btn.innerText = "読み込み中...";
+      btn.disabled = true;
+
+      try {
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const text = await file.text();
+          jsonData = JSON.parse(text);
+          dataSource = { type: 'local', data: jsonData }; 
+        } else if (url) {
+          const res = await fetch(url);
+          if(!res.ok) throw new Error("URLの読み込みに失敗しました (HTTP " + res.status + ")");
+          jsonData = await res.json();
+          dataSource = { type: 'url', url: url };
+        } else {
+          throw new Error("URLを入力するか、ファイルを選択してください");
+        }
+        
+        // JSONのフォーマットチェック
+        if(!Array.isArray(jsonData) || jsonData.length === 0) {
+          throw new Error("JSONデータは配列形式で、1問以上の問題が含まれている必要があります。");
+        }
+        
+        // 追加成功
+        const icons = ['fa-book', 'fa-flask', 'fa-calculator', 'fa-landmark', 'fa-globe', 'fa-language', 'fa-brain', 'fa-dna'];
+        const colors = ['indigo', 'emerald', 'blue', 'rose', 'amber', 'purple', 'cyan'];
+        const newSub = {
+          id: "sub_" + Date.now(),
+          name: name,
+          desc: desc || `${jsonData.length}問のデータ`,
+          icon: icons[Math.floor(Math.random() * icons.length)],
+          color: colors[Math.floor(Math.random() * colors.length)],
+          source: dataSource
+        };
+        
+        appSubjects.push(newSub);
+        saveSubjects();
+        
+        // フォームリセット
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-desc').value = '';
+        document.getElementById('add-url').value = '';
+        fileInput.value = '';
+        
+        showScreen('home');
+        
+      } catch (err) {
+        errorEl.innerText = "エラー: " + err.message;
+        errorEl.classList.remove('hidden');
+      } finally {
+        btn.innerText = "JSONを検証して追加";
+        btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // テストエンジン
+    // ==========================================
+    async function selectSubject(id) {
+      currentSubject = appSubjects.find(s => s.id === id);
+      if(!currentSubject) return;
+
+      try {
+        document.getElementById('setup-title').innerText = "ロード中...";
+        showScreen('quiz'); 
+
+        if (currentSubject.source.type === 'local') {
+          currentQuizSet = currentSubject.source.data;
+        } else if (currentSubject.source.type === 'url') {
+          const res = await fetch(currentSubject.source.url);
+          if (!res.ok) throw new Error();
+          currentQuizSet = await res.json();
+        }
+        
+        document.getElementById('setup-title').innerText = currentSubject.name;
+        document.getElementById('setup-count').innerText = currentQuizSet.length;
+        document.getElementById('setup-icon').innerHTML = `<i class="fa-solid ${currentSubject.icon}"></i>`;
+      } catch (e) { 
+        showScreen('home');
+        alert(`データの読み込みに失敗しました。\n設定されたパスやURLが正しいか確認してください。`); 
+      }
+    }
+
+    function startQuizEngine(count) {
+      currentMode = document.querySelector('input[name="studyMode"]:checked').value;
+      let shuffled = [...currentQuizSet].sort(() => Math.random() - 0.5);
+      activeQuestions = count > 0 && count < shuffled.length ? shuffled.slice(0, count) : shuffled;
+      currentQuestionIndex = score = 0; wrongAnswersLog = []; sessionStartTime = Date.now();
+      showScreen('engine'); renderQuestion();
+    }
+
+    function renderQuestion() {
+      const qData = activeQuestions[currentQuestionIndex];
+      const qText = qData.q || qData.question;
+      const aText = qData.a || qData.answer;
+      isFlipped = false;
+
+      document.getElementById('engine-q-num').innerText = currentQuestionIndex + 1;
+      document.getElementById('engine-progress-text').innerText = `${currentQuestionIndex + 1} / ${activeQuestions.length}`;
+      document.getElementById('engine-progress-bar').style.width = `${((currentQuestionIndex + 1) / activeQuestions.length) * 100}%`;
+      
+      document.getElementById('feedback-box').classList.add('hidden');
+      document.getElementById('btn-next').classList.add('hidden');
+      
+      if (currentMode === 'flashcard') {
+        document.getElementById('input-area').classList.add('hidden');
+        document.getElementById('flashcard-area').classList.remove('hidden');
+        document.getElementById('fc-controls').classList.add('hidden');
+        document.getElementById('card-inner').classList.remove('is-flipped');
+        document.getElementById('fc-q-text').innerText = qText;
+        document.getElementById('fc-a-text').innerText = aText;
+      } else {
+        document.getElementById('flashcard-area').classList.add('hidden');
+        document.getElementById('input-area').classList.remove('hidden');
+        document.getElementById('in-q-text').innerText = qText;
+        const inp = document.getElementById('user-input');
+        inp.value = ''; inp.disabled = false; 
+        document.getElementById('btn-check').classList.remove('hidden');
+        setTimeout(() => inp.focus(), 100);
+      }
+    }
+
+    function flipCard() {
+      if(currentMode !== 'flashcard' || isFlipped) return;
+      isFlipped = true;
+      document.getElementById('card-inner').classList.add('is-flipped');
+      setTimeout(() => document.getElementById('fc-controls').classList.remove('hidden'), 200);
+    }
+
+    function handleFlashcardResult(correct) {
+      const qData = activeQuestions[currentQuestionIndex];
+      if(correct) {
+        score++;
+      } else {
+        wrongAnswersLog.push({ q: qData.q || qData.question, userAns: "単語帳（スキップ）", correctAns: qData.a || qData.answer });
+      }
+      nextQuestion();
+    }
+
+    function checkInput() {
+      const qData = activeQuestions[currentQuestionIndex];
+      const ansText = qData.a || qData.answer;
+      const qText = qData.q || qData.question;
+      const inp = document.getElementById('user-input');
+      
+      if(inp.disabled) return;
+      
+      const userVal = inp.value.trim();
+      const isCorrect = userVal === ansText;
+      
+      if (isCorrect) {
+        score++;
+      } else {
+        wrongAnswersLog.push({ q: qText, userAns: userVal || "無回答", correctAns: ansText });
+      }
+      
+      inp.disabled = true; document.getElementById('btn-check').classList.add('hidden');
+      const fBox = document.getElementById('feedback-box');
+      fBox.className = `mt-auto p-5 rounded-2xl border space-y-2 text-center shadow-lg fade-in ${isCorrect ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-rose-950/40 border-rose-500/30'}`;
+      document.getElementById('feedback-title').innerHTML = isCorrect ? `<i class="fa-solid fa-check"></i> <span class="text-emerald-400">正解！</span>` : `<i class="fa-solid fa-xmark"></i> <span class="text-rose-400">不正解...</span>`;
+      document.getElementById('feedback-ans').innerText = `正解: ${ansText}`;
+      
+      fBox.classList.remove('hidden');
+      document.getElementById('btn-next').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      currentQuestionIndex < activeQuestions.length ? renderQuestion() : finishQuiz();
+    }
+
+    function finishQuiz() {
+      const elapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
+      userStats.totalTimeSec += elapsedSec; userStats.todayTimeSec += elapsedSec;
+      userStats.totalQuestions += activeQuestions.length; userStats.totalCorrect += score;
+      userStats.dailyLog[new Date().toDateString()].timeSec += elapsedSec;
+      saveStats();
+
+      const total = activeQuestions.length;
+      const acc = Math.round((score / total) * 100);
+      document.getElementById('result-acc').innerText = `${acc}%`;
+      document.getElementById('result-score-detail').innerText = `${score} / ${total} 問正解`;
+      document.getElementById('result-time').innerText = `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, '0')}`;
+
+      const reviewSec = document.getElementById('review-section');
+      const reviewList = document.getElementById('review-list');
+      reviewList.innerHTML = '';
+      
+      if (wrongAnswersLog.length > 0) {
+        reviewSec.classList.remove('hidden');
+        wrongAnswersLog.forEach(w => {
+          reviewList.innerHTML += `
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-left">
+              <div class="font-bold text-slate-200 mb-3"><span class="text-rose-400 mr-2">Q.</span>${w.q}</div>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div class="bg-rose-950/30 border border-rose-500/20 p-3 rounded-xl text-rose-200">
+                  <div class="text-[10px] text-rose-400/70 mb-1">あなたの回答</div>
+                  ${w.userAns}
+                </div>
+                <div class="bg-emerald-950/30 border border-emerald-500/20 p-3 rounded-xl text-emerald-200">
+                  <div class="text-[10px] text-emerald-400/70 mb-1">正解</div>
+                  ${w.correctAns}
+                </div>
+              </div>
+            </div>`;
+        });
+      } else { 
+        reviewSec.classList.add('hidden'); 
+      }
+      
+      showScreen('result');
+    }
+
+    function retrySubject() { document.getElementById('setup-title').innerText = currentSubject.name; showScreen('quiz'); }
+    
+    function resetStats() {
+      if(confirm('全ての学習データと登録した教科リストを初期化しますか？')) {
+        localStorage.removeItem('studyNav_stats');
+        localStorage.removeItem('studyNav_subjects');
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
